@@ -58,6 +58,7 @@
                 messageEl.textContent = 'test ok';
                 messageEl.style.color = 'green';
                 // Việc chuyển hướng sẽ do onAuthStateChanged xử lý
+                await redirectUserByRole(userCredential.user.uid);
             } catch (error) {
                 console.error('Login failed:', error);
                 messageEl.textContent = 'Sai email hoặc mật khẩu';
