@@ -23,7 +23,7 @@
                 <h2>Đăng nhập</h2>
                 <div class="input-group">
                     <label for="email">Email đăng nhập</label>
-                    <input type="email" id="email" placeholder="user@coreqstudio.vn" required>
+                    <input type="email" id="email" placeholder="user@coreq.com" required>
                 </div>
                 <div class="input-group">
                     <label for="password">Mật khẩu</label>
@@ -47,9 +47,9 @@
             const password = document.getElementById('password').value;
             const messageEl = document.getElementById('message');
 
-            // Kiểm tra email đúng đuôi @coreqstudio.vn
-            if (!email.endsWith('@coreqstudio.vn')) {
-                messageEl.textContent = 'Email phải có đuôi @coreqstudio.vn';
+            // Kiểm tra email đúng đuôi @coreq.com
+            if (!email.endsWith('@coreq.com')) {
+                messageEl.textContent = 'Email phải có đuôi @coreq.com';
                 messageEl.style.color = 'red';
                 return;
             }
