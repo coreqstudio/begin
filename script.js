@@ -59,6 +59,7 @@ async function redirectUserByRole(uid) {
 async function loadAdminPage() {
     const user = auth.currentUser;
     if (!user) {
+        // Nếu chưa đăng nhập, chuyển về login
         window.location.href = 'index.html';
         return;
     }
@@ -180,14 +181,26 @@ async function loadCurrentUserName() {
     }
 }
 
-// ========== THEO DÕI TRẠNG THÁI (không tự chuyển hướng) ==========
+// ========== THEO DÕI TRẠNG THÁI ĐĂNG NHẬP (quan trọng) ==========
 auth.onAuthStateChanged(user => {
+    console.log('Auth state changed. User:', user ? user.email : 'null');
+    const path = window.location.pathname;
+
     if (user) {
-        console.log('✅ Đã đăng nhập:', user.email);
+        // Nếu đang ở trang login, chuyển hướng theo role
+        if (path.endsWith('index.html') || path === '/') {
+            redirectUserByRole(user.uid);
+        }
+        // Nếu đang ở trang admin, kiểm tra quyền admin
+        else if (path.endsWith('admin.html')) {
+            loadAdminPage();
+        }
+        // Nếu đang ở trang user, kiểm tra quyền user
+        else if (path.endsWith('user.html')) {
+            loadUserPage();
+        }
     } else {
-        console.log('ℹ️ Chưa đăng nhập hoặc đã đăng xuất');
-        // Tự chuyển về login nếu đang ở trang admin/user
-        const path = window.location.pathname;
+        // Nếu chưa đăng nhập mà đang ở trang admin/user, chuyển về login
         if (path.endsWith('admin.html') || path.endsWith('user.html')) {
             window.location.href = 'index.html';
         }
