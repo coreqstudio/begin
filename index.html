@@ -9,8 +9,7 @@
 <body>
     <div class="container">
         <!-- Bên trái 2/3 ảnh nền -->
-        <div class="left-panel" id="leftPanel">
-            <!-- Ảnh nền sẽ được load động từ Storage sau này -->
+        <div class="left-panel">
             <div class="overlay"></div>
             <div class="welcome-text">
                 <h1>CoreQ Studio</h1>
@@ -24,11 +23,11 @@
                 <h2>Đăng nhập</h2>
                 <div class="input-group">
                     <label for="email">Email đăng nhập</label>
-                    <input type="email" id="email" name="email" placeholder="user@coreq.vn" required>
+                    <input type="email" id="email" placeholder="user@coreqstudio.vn" required>
                 </div>
                 <div class="input-group">
                     <label for="password">Mật khẩu</label>
-                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    <input type="password" id="password" placeholder="••••••••" required>
                 </div>
                 <button type="submit" class="btn-login">Đăng nhập</button>
                 <p id="message" class="message"></p>
@@ -38,6 +37,57 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-    <script src="script.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Xử lý đăng nhập
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('message');
+
+            // Kiểm tra email đúng đuôi @coreqstudio.vn
+            if (!email.endsWith('@coreqstudio.vn')) {
+                messageEl.textContent = 'Email phải có đuôi @coreqstudio.vn';
+                messageEl.style.color = 'red';
+                return;
+            }
+
+            try {
+                const user = await login(email, password);
+                // Sau khi login, kiểm tra role và chuyển hướng
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'user.html';
+                    }
+                } else {
+                    // Nếu chưa có document -> đăng xuất và báo lỗi
+                    await logout();
+                    messageEl.textContent = 'Tài khoản chưa được cấu hình. Liên hệ admin.';
+                    messageEl.style.color = 'red';
+                }
+            } catch (error) {
+                messageEl.textContent = 'Sai email hoặc mật khẩu.';
+                messageEl.style.color = 'red';
+            }
+        });
+
+        // Nếu đã đăng nhập rồi, chuyển hướng luôn
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else if (userDoc.exists) {
+                    window.location.href = 'user.html';
+                }
+            }
+        });
+    </script>
 </body>
 </html>
