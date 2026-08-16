@@ -54,7 +54,7 @@
             }
 
             try {
-                await auth.signInWithEmailAndPassword(email, password);
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 messageEl.textContent = 'test ok';
                 messageEl.style.color = 'green';
                 // Việc chuyển hướng sẽ do onAuthStateChanged trong script.js đảm nhiệm
