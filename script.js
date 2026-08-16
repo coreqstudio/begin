@@ -59,11 +59,11 @@ async function redirectUserByRole(uid) {
 async function loadAdminPage() {
     const user = auth.currentUser;
     if (!user) {
-        // Nếu chưa đăng nhập, chuyển về login
         window.location.href = 'index.html';
         return;
     }
     const role = await getUserRole(user.uid);
+    console.log('🔑 Role hiện tại:', role);
     const adminContent = document.getElementById('adminContent');
     const noAccess = document.getElementById('noAccess');
     if (role === 'admin') {
@@ -73,6 +73,7 @@ async function loadAdminPage() {
     } else {
         adminContent.style.display = 'none';
         noAccess.style.display = 'block';
+        console.warn('⛔ Không phải admin, role =', role);
     }
 }
 
@@ -102,20 +103,26 @@ async function loadAllUsers() {
     if (!userListEl) return;
     try {
         const snapshot = await db.collection('users').get();
+        console.log('📦 Số user trong Firestore:', snapshot.size);
         userListEl.innerHTML = '';
         snapshot.forEach(doc => {
             const user = doc.data();
+            console.log('👤 User:', doc.id, user);
             const div = document.createElement('div');
             div.className = 'user-card';
             div.innerHTML = `
                 <h4>${user.name || 'Không tên'}</h4>
-                <p>Email: ${user.email || ''}</p>
+                <p>Email: ${user.email || 'Chưa có email'}</p>
                 <p>Vai trò: ${user.role || 'user'}</p>
             `;
             userListEl.appendChild(div);
         });
+        if (snapshot.empty) {
+            userListEl.innerHTML = '<p>Chưa có user nào.</p>';
+        }
     } catch (error) {
-        console.error('Lỗi tải danh sách user:', error);
+        console.error('❌ Lỗi tải danh sách user:', error);
+        userListEl.innerHTML = '<p style="color:red">Lỗi tải danh sách, hãy kiểm tra console.</p>';
     }
 }
 
