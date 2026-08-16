@@ -2,24 +2,33 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>User Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang nhân viên - CoreQ Studio</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="user-container">
-        <h1>Chào mừng!</h1>
-        <p>Bạn đã đăng nhập thành công vào khu vực user.</p>
-        <button id="logoutBtn">Đăng xuất</button>
+        <nav>
+            <h2>User Dashboard</h2>
+            <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
+        </nav>
+        <main>
+            <h3>Chào mừng <span id="userName"></span>!</h3>
+            <p>Bạn có quyền user, chỉ được xem dữ liệu.</p>
+            <!-- Hiển thị dữ liệu nếu có -->
+        </main>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-    <script src="app.js"></script>
-    <script>
-        checkAuth(); // không yêu cầu role, chỉ cần đăng nhập
+    <!-- Firebase Compat CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
-        document.getElementById('logoutBtn').addEventListener('click', logout);
+    <script src="script.js"></script>
+    <script>
+        checkUserAccess();
+        setupLogout();
+        loadCurrentUserName();
     </script>
 </body>
 </html>
