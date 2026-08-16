@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - CoreQ Studio</title>
+    <title>Đăng nhập - CoreQ Studio</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Bên trái 2/3 ảnh nền -->
+    <div class="login-container">
         <div class="left-panel">
             <div class="overlay"></div>
             <div class="welcome-text">
@@ -16,8 +15,6 @@
                 <p>Hệ thống quản lý nội bộ</p>
             </div>
         </div>
-
-        <!-- Bên phải 1/3 form login -->
         <div class="right-panel">
             <form id="loginForm" class="login-form">
                 <h2>Đăng nhập</h2>
@@ -35,18 +32,21 @@
         </div>
     </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <!-- Firebase Compat CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <!-- Script chung -->
     <script src="script.js"></script>
     <script>
-        // Xử lý đăng nhập
+        // Xử lý form login
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const messageEl = document.getElementById('message');
 
-            // Kiểm tra email đúng đuôi @coreq.com
             if (!email.endsWith('@coreq.com')) {
                 messageEl.textContent = 'Email phải có đuôi @coreq.com';
                 messageEl.style.color = 'red';
@@ -54,37 +54,15 @@
             }
 
             try {
-                const user = await login(email, password);
-                // Sau khi login, kiểm tra role và chuyển hướng
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    if (userData.role === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'user.html';
-                    }
-                } else {
-                    // Nếu chưa có document -> đăng xuất và báo lỗi
-                    await logout();
-                    messageEl.textContent = 'Tài khoản chưa được cấu hình. Liên hệ admin.';
-                    messageEl.style.color = 'red';
-                }
+                await auth.signInWithEmailAndPassword(email, password);
+                messageEl.textContent = 'test ok';
+                messageEl.style.color = 'green';
+                // Chuyển hướng theo role (sẽ được xử lý trong script.js)
+                // redirectUserByRole(user.uid);
             } catch (error) {
-                messageEl.textContent = 'Sai email hoặc mật khẩu.';
+                console.error('Login failed:', error);
+                messageEl.textContent = 'Sai email hoặc mật khẩu';
                 messageEl.style.color = 'red';
-            }
-        });
-
-        // Nếu đã đăng nhập rồi, chuyển hướng luôn
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists && userDoc.data().role === 'admin') {
-                    window.location.href = 'admin.html';
-                } else if (userDoc.exists) {
-                    window.location.href = 'user.html';
-                }
             }
         });
     </script>
