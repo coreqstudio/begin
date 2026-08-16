@@ -12,11 +12,20 @@
             <h2>User Dashboard</h2>
             <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
         </nav>
-        <main>
-            <h3>Chào mừng <span id="userName"></span>!</h3>
-            <p>Bạn có quyền user, chỉ được xem dữ liệu.</p>
-            <!-- Hiển thị dữ liệu nếu có -->
-        </main>
+
+        <!-- Nội dung chỉ hiển thị cho user -->
+        <div id="userContent">
+            <main>
+                <h3>Chào mừng <span id="userName"></span>!</h3>
+                <p>Bạn có quyền user, chỉ được xem dữ liệu.</p>
+                <!-- Các nội dung khác dành cho user -->
+            </main>
+        </div>
+
+        <!-- Thông báo không có quyền -->
+        <div id="noAccess" style="display: none;">
+            <p>Bạn không có quyền truy cập trang user.</p>
+        </div>
     </div>
 
     <!-- Firebase Compat CDN -->
@@ -26,9 +35,8 @@
 
     <script src="script.js"></script>
     <script>
-        checkUserAccess();
+        loadUserPage();
         setupLogout();
-        loadCurrentUserName();
     </script>
 </body>
 </html>
