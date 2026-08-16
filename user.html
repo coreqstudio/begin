@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="user-container">
+        <h1>Chào mừng!</h1>
+        <p>Bạn đã đăng nhập thành công vào khu vực user.</p>
+        <button id="logoutBtn">Đăng xuất</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        checkAuth(); // không yêu cầu role, chỉ cần đăng nhập
+
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+    </script>
+</body>
+</html>

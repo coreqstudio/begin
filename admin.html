@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CoreQ Studio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>CoreQ Admin</h2>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#" data-page="create-user">👤 Tạo user và phân quyền</a></li>
+                    <li><a href="#" data-page="status">📊 Cập nhật trạng thái</a></li>
+                    <li><a href="#" data-page="coming-soon">🚀 Coming Soon</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <div id="page-create-user" class="page active">
+                <h2>Tạo user và phân quyền</h2>
+                <form id="createUserForm" class="admin-form">
+                    <div class="input-group">
+                        <label>Email</label>
+                        <input type="email" id="newUserEmail" placeholder="user@coreqstudio.vn" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Mật khẩu tạm</label>
+                        <input type="password" id="newUserPassword" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Tên hiển thị</label>
+                        <input type="text" id="newUserName" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Role</label>
+                        <select id="newUserRole">
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="staff">Staff</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Tạo user</button>
+                </form>
+                <p id="createUserMessage" class="message"></p>
+            </div>
+
+            <div id="page-status" class="page">
+                <h2>Cập nhật trạng thái</h2>
+                <div class="status-columns">
+                    <div class="user-list">
+                        <h3>Danh sách User</h3>
+                        <table id="userTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Tên</th>
+                                    <th>Role</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="auth-logs">
+                        <h3>Lịch sử login/logout (real-time)</h3>
+                        <ul id="logList"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-coming-soon" class="page">
+                <h2>Coming Soon</h2>
+                <p>Chức năng này sẽ được phát triển trong tương lai.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // ====== Kiểm tra quyền admin ======
+        checkAuth('admin');
+
+        // ====== Xử lý sidebar navigation ======
+        const navLinks = document.querySelectorAll('.sidebar nav a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(`page-${page}`).classList.add('active');
+                navLinks.forEach(l => l.parentElement.classList.remove('active'));
+                link.parentElement.classList.add('active');
+            });
+        });
+
+        // ====== Đăng xuất ======
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        // ====== Tạo user (dùng REST API để tạo trong Authentication) ======
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('newUserEmail').value.trim();
+            const password = document.getElementById('newUserPassword').value;
+            const name = document.getElementById('newUserName').value.trim();
+            const role = document.getElementById('newUserRole').value;
+            const messageEl = document.getElementById('createUserMessage');
+
+            if (!email.endsWith('@coreqstudio.vn')) {
+                messageEl.textContent = 'Email phải có đuôi @coreqstudio.vn';
+                messageEl.style.color = 'red';
+                return;
+            }
+
+            try {
+                // Bước 1: Tạo user trong Firebase Auth bằng REST API
+                const apiKey = firebaseConfig.apiKey;
+                const signUpUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`;
+                const response = await fetch(signUpUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, returnSecureToken: false })
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error.message);
+                }
+                const uid = data.localId;
+
+                // Bước 2: Lưu thông tin user vào Firestore
+                await db.collection('users').doc(uid).set({
+                    email,
+                    name,
+                    role,
+                    isActive: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                messageEl.textContent = `Đã tạo user ${email} thành công!`;
+                messageEl.style.color = 'green';
+                document.getElementById('createUserForm').reset();
+            } catch (error) {
+                console.error('Create user error:', error);
+                messageEl.textContent = `Lỗi: ${error.message}`;
+                messageEl.style.color = 'red';
+            }
+        });
+
+        // ====== Hiển thị danh sách user và chức năng (khóa, reset pass, đổi tên) ======
+        const userTableBody = document.getElementById('userTableBody');
+
+        function renderUsers(users) {
+            userTableBody.innerHTML = '';
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.email}</td>
+                    <td>${user.name}</td>
+                    <td>${user.role}</td>
+                    <td>${user.isActive ? '✅ Hoạt động' : '⛔ Khóa'}</td>
+                    <td>
+                        <button onclick="toggleActive('${user.id}', ${!user.isActive})">${user.isActive ? 'Khóa' : 'Mở khóa'}</button>
+                        <button onclick="editName('${user.id}', '${user.name}')">Đổi tên</button>
+                        <button onclick="resetPassword('${user.email}')">Reset pass</button>
+                    </td>
+                `;
+                userTableBody.appendChild(row);
+            });
+        }
+
+        // Lắng nghe thay đổi từ Firestore (realtime)
+        db.collection('users').onSnapshot(snapshot => {
+            const users = [];
+            snapshot.forEach(doc => {
+                users.push({ id: doc.id, ...doc.data() });
+            });
+            renderUsers(users);
+        });
+
+        // Hàm khóa/mở khóa user
+        window.toggleActive = async (uid, isActive) => {
+            await db.collection('users').doc(uid).update({ isActive });
+            console.log('User status updated');
+        };
+
+        // Hàm đổi tên user
+        window.editName = async (uid, currentName) => {
+            const newName = prompt('Nhập tên mới:', currentName);
+            if (newName && newName.trim() !== '') {
+                await db.collection('users').doc(uid).update({ name: newName.trim() });
+            }
+        };
+
+        // Hàm reset password (gửi email reset)
+        window.resetPassword = async (email) => {
+            const apiKey = firebaseConfig.apiKey;
+            const resetUrl = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`;
+            try {
+                const response = await fetch(resetUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestType: 'PASSWORD_RESET', email })
+                });
+                if (response.ok) {
+                    alert(`Đã gửi email reset password đến ${email}`);
+                } else {
+                    const data = await response.json();
+                    alert(`Lỗi: ${data.error.message}`);
+                }
+            } catch (error) {
+                console.error('Reset password error:', error);
+                alert('Không thể gửi email reset. Kiểm tra cấu hình Firebase.');
+            }
+        };
+
+        // ====== Hiển thị log realtime ======
+        const logList = document.getElementById('logList');
+        db.collection('auth_logs')
+            .orderBy('timestamp', 'desc')
+            .limit(50)
+            .onSnapshot(snapshot => {
+                logList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const time = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'N/A';
+                    const li = document.createElement('li');
+                    li.textContent = `${time} - ${data.email} - ${data.action}`;
+                    logList.appendChild(li);
+                });
+            });
+    </script>
+</body>
+</html>
