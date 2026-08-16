@@ -16,20 +16,24 @@ const db = firebase.firestore();
 // ========== CÁC HÀM CHUNG ==========
 
 // Lấy role của user từ Firestore
+// Thêm biến chống lặp redirect
+let redirecting = false;
+
+// Hàm lấy role (nên throw nếu lỗi thay vì trả null)
 async function getUserRole(uid) {
     try {
         const doc = await db.collection('users').doc(uid).get();
         if (doc.exists) {
             return doc.data().role;
         }
-        return null;
+        throw new Error('Tài khoản chưa được phân quyền trong Firestore');
     } catch (error) {
         console.error('Lỗi lấy role:', error);
         return null;
     }
 }
 
-// Chuyển hướng theo role
+// Chuyển hướng theo role (chỉ dùng từ trang login)
 async function redirectUserByRole(uid) {
     const role = await getUserRole(uid);
     if (role === 'admin') {
@@ -37,12 +41,67 @@ async function redirectUserByRole(uid) {
     } else if (role === 'user') {
         window.location.href = 'user.html';
     } else {
-        // Nếu không có role, đăng xuất và thông báo
-       // await auth.signOut();
+        await auth.signOut();
         alert('Tài khoản chưa được phân quyền. Vui lòng liên hệ admin.');
-       // window.location.href = 'index.html';
+        window.location.href = 'index.html';
     }
 }
+
+// Hàm kiểm tra quyền admin nhưng không redirect, chỉ ẩn/hiện nội dung
+async function loadAdminPage() {
+    const user = auth.currentUser;
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    const role = await getUserRole(user.uid);
+    if (role !== 'admin') {
+        document.getElementById('adminContent').style.display = 'none';
+        document.getElementById('noAccess').style.display = 'block';
+    } else {
+        document.getElementById('adminContent').style.display = 'block';
+        document.getElementById('noAccess').style.display = 'none';
+        loadAllUsers(); // Load danh sách user nếu là admin
+    }
+}
+
+// Tương tự cho user
+async function loadUserPage() {
+    const user = auth.currentUser;
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    const role = await getUserRole(user.uid);
+    if (role !== 'user') {
+        document.getElementById('userContent').style.display = 'none';
+        document.getElementById('noAccess').style.display = 'block';
+    } else {
+        document.getElementById('userContent').style.display = 'block';
+        document.getElementById('noAccess').style.display = 'none';
+        loadCurrentUserName();
+    }
+}
+
+// Sửa onAuthStateChanged để chỉ redirect từ trang login
+auth.onAuthStateChanged(async user => {
+    if (user) {
+        const path = window.location.pathname;
+        if (path.endsWith('index.html') || path === '/') {
+            if (!redirecting) {
+                redirecting = true;
+                await redirectUserByRole(user.uid);
+                redirecting = false;
+            }
+        }
+    } else {
+        // Nếu chưa đăng nhập và đang ở admin/user thì về login
+        const path = window.location.pathname;
+        if (path.endsWith('admin.html') || path.endsWith('user.html')) {
+            window.location.href = 'index.html';
+        }
+    }
+});
 
 // Kiểm tra quyền admin, nếu không phải admin chuyển về trang user
 async function checkAdminAccess() {
