@@ -54,12 +54,13 @@
             }
 
             try {
-                await auth.signInWithEmailAndPassword(email, password); //const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 messageEl.textContent = 'Login Thành Công';
                 messageEl.style.color = 'green';
                 // Chuyển hướng theo role (sẽ được xử lý trong script.js)
-                redirectUserByRole(user.uid);
-                //await redirectUserByRole(userCredential.user.uid);
+              
+                await redirectUserByRole(userCredential.user.uid);
+                
             } catch (error) {
                 console.error('Login failed:', error);
                 messageEl.textContent = 'Sai email hoặc mật khẩu';
