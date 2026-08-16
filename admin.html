@@ -12,24 +12,33 @@
             <h2>Admin Dashboard</h2>
             <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
         </nav>
-        <main>
-            <h3>Danh sách nhân viên</h3>
-            <div id="userList" class="user-list">
-                <!-- Danh sách user sẽ load từ Firestore -->
-            </div>
-            <hr>
-            <h3>Thêm nhân viên mới</h3>
-            <form id="addUserForm">
-                <input type="text" id="newName" placeholder="Tên nhân viên" required>
-                <input type="email" id="newEmail" placeholder="Email (vd: user@coreq.com)" required>
-                <input type="password" id="newPassword" placeholder="Mật khẩu tạm" required>
-                <select id="newRole">
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                </select>
-                <button type="submit" class="btn-primary">Tạo user</button>
-            </form>
-        </main>
+
+        <!-- Nội dung chỉ hiển thị cho admin -->
+        <div id="adminContent">
+            <main>
+                <h3>Danh sách nhân viên</h3>
+                <div id="userList" class="user-list">
+                    <!-- Danh sách user sẽ load từ Firestore -->
+                </div>
+                <hr>
+                <h3>Thêm nhân viên mới</h3>
+                <form id="addUserForm">
+                    <input type="text" id="newName" placeholder="Tên nhân viên" required>
+                    <input type="email" id="newEmail" placeholder="Email (vd: user@coreq.com)" required>
+                    <input type="password" id="newPassword" placeholder="Mật khẩu tạm" required>
+                    <select id="newRole">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <button type="submit" class="btn-primary">Tạo user</button>
+                </form>
+            </main>
+        </div>
+
+        <!-- Thông báo không có quyền -->
+        <div id="noAccess" style="display: none;">
+            <p>Bạn không có quyền truy cập trang admin.</p>
+        </div>
     </div>
 
     <!-- Firebase Compat CDN -->
@@ -39,9 +48,7 @@
 
     <script src="script.js"></script>
     <script>
-        // Kiểm tra quyền admin, nếu không phải admin thì chuyển về trang user hoặc login
-        checkAdminAccess();
-        loadAllUsers();
+        loadAdminPage();
         setupLogout();
         setupAddUser();
     </script>
