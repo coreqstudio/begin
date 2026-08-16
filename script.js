@@ -38,9 +38,9 @@ async function redirectUserByRole(uid) {
         window.location.href = 'user.html';
     } else {
         // Nếu không có role, đăng xuất và thông báo
-        await auth.signOut();
+       // await auth.signOut();
         alert('Tài khoản chưa được phân quyền. Vui lòng liên hệ admin.');
-        window.location.href = 'index.html';
+       // window.location.href = 'index.html';
     }
 }
 
