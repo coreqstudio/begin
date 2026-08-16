@@ -1,4 +1,3 @@
-/* Reset cơ bản */
 * {
     margin: 0;
     padding: 0;
@@ -20,7 +19,7 @@ body {
 }
 
 .left-panel {
-    flex: 2; /* 2/3 */
+    flex: 2;
     background-image: url('https://picsum.photos/1200/800');
     background-size: cover;
     background-position: center;
@@ -56,7 +55,7 @@ body {
 }
 
 .right-panel {
-    flex: 1; /* 1/3 */
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
