@@ -16,7 +16,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+//const app = initializeApp(firebaseConfig);
 
 // ========== KHỞI TẠO FIREBASE ==========
 firebase.initializeApp(firebaseConfig);
