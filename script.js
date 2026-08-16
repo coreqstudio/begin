@@ -13,13 +13,10 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// ========== CÁC HÀM CHUNG ==========
-
-// Lấy role của user từ Firestore
-// Thêm biến chống lặp redirect
+// Biến chống lặp redirect
 let redirecting = false;
 
-// Hàm lấy role (nên throw nếu lỗi thay vì trả null)
+// ========== HÀM LẤY ROLE TỪ FIRESTORE ==========
 async function getUserRole(uid) {
     try {
         const doc = await db.collection('users').doc(uid).get();
@@ -33,21 +30,27 @@ async function getUserRole(uid) {
     }
 }
 
-// Chuyển hướng theo role (chỉ dùng từ trang login)
+// ========== CHUYỂN HƯỚNG THEO ROLE (chỉ dùng từ trang login) ==========
 async function redirectUserByRole(uid) {
-    const role = await getUserRole(uid);
-    if (role === 'admin') {
-        window.location.href = 'admin.html';
-    } else if (role === 'user') {
-        window.location.href = 'user.html';
-    } else {
-        await auth.signOut();
-        alert('Tài khoản chưa được phân quyền. Vui lòng liên hệ admin.');
-        window.location.href = 'index.html';
+    if (redirecting) return;
+    redirecting = true;
+    try {
+        const role = await getUserRole(uid);
+        if (role === 'admin') {
+            window.location.href = 'admin.html';
+        } else if (role === 'user') {
+            window.location.href = 'user.html';
+        } else {
+            await auth.signOut();
+            alert('Tài khoản chưa được phân quyền. Vui lòng liên hệ admin.');
+            window.location.href = 'index.html';
+        }
+    } finally {
+        redirecting = false;
     }
 }
 
-// Hàm kiểm tra quyền admin nhưng không redirect, chỉ ẩn/hiện nội dung
+// ========== TRANG ADMIN ==========
 async function loadAdminPage() {
     const user = auth.currentUser;
     if (!user) {
@@ -55,17 +58,19 @@ async function loadAdminPage() {
         return;
     }
     const role = await getUserRole(user.uid);
-    if (role !== 'admin') {
-        document.getElementById('adminContent').style.display = 'none';
-        document.getElementById('noAccess').style.display = 'block';
+    const adminContent = document.getElementById('adminContent');
+    const noAccess = document.getElementById('noAccess');
+    if (role === 'admin') {
+        adminContent.style.display = 'block';
+        noAccess.style.display = 'none';
+        loadAllUsers();
     } else {
-        document.getElementById('adminContent').style.display = 'block';
-        document.getElementById('noAccess').style.display = 'none';
-        loadAllUsers(); // Load danh sách user nếu là admin
+        adminContent.style.display = 'none';
+        noAccess.style.display = 'block';
     }
 }
 
-// Tương tự cho user
+// ========== TRANG USER ==========
 async function loadUserPage() {
     const user = auth.currentUser;
     if (!user) {
@@ -73,80 +78,22 @@ async function loadUserPage() {
         return;
     }
     const role = await getUserRole(user.uid);
-    if (role !== 'user') {
-        document.getElementById('userContent').style.display = 'none';
-        document.getElementById('noAccess').style.display = 'block';
-    } else {
-        document.getElementById('userContent').style.display = 'block';
-        document.getElementById('noAccess').style.display = 'none';
+    const userContent = document.getElementById('userContent');
+    const noAccess = document.getElementById('noAccess');
+    if (role === 'user') {
+        userContent.style.display = 'block';
+        noAccess.style.display = 'none';
         loadCurrentUserName();
-    }
-}
-
-// Sửa onAuthStateChanged để chỉ redirect từ trang login
-auth.onAuthStateChanged(async user => {
-    if (user) {
-        const path = window.location.pathname;
-        if (path.endsWith('index.html') || path === '/') {
-            if (!redirecting) {
-                redirecting = true;
-                await redirectUserByRole(user.uid);
-                redirecting = false;
-            }
-        }
     } else {
-        // Nếu chưa đăng nhập và đang ở admin/user thì về login
-        const path = window.location.pathname;
-        if (path.endsWith('admin.html') || path.endsWith('user.html')) {
-            window.location.href = 'index.html';
-        }
-    }
-});
-
-// Kiểm tra quyền admin, nếu không phải admin chuyển về trang user
-async function checkAdminAccess() {
-    const user = auth.currentUser;
-    if (!user) {
-        window.location.href = 'index.html';
-        return;
-    }
-    const role = await getUserRole(user.uid);
-    if (role !== 'admin') {
-        window.location.href = 'user.html';
+        userContent.style.display = 'none';
+        noAccess.style.display = 'block';
     }
 }
 
-// Kiểm tra quyền user, nếu không phải user chuyển về trang admin
-async function checkUserAccess() {
-    const user = auth.currentUser;
-    if (!user) {
-        window.location.href = 'index.html';
-        return;
-    }
-    const role = await getUserRole(user.uid);
-    if (role !== 'user') {
-        window.location.href = 'admin.html';
-    }
-}
-
-// Thiết lập nút đăng xuất (nếu có)
-function setupLogout() {
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            await auth.signOut();
-            window.location.href = 'index.html';
-        });
-    }
-}
-
-// ========== CÁC HÀM CHO TRANG ADMIN ==========
-
-// Load danh sách user từ Firestore
+// ========== QUẢN LÝ NGƯỜI DÙNG (ADMIN) ==========
 async function loadAllUsers() {
     const userListEl = document.getElementById('userList');
     if (!userListEl) return;
-
     try {
         const snapshot = await db.collection('users').get();
         userListEl.innerHTML = '';
@@ -162,33 +109,27 @@ async function loadAllUsers() {
             userListEl.appendChild(div);
         });
     } catch (error) {
-        console.error('Lỗi tải user:', error);
+        console.error('Lỗi tải danh sách user:', error);
     }
 }
 
-// Thêm user mới (chỉ admin mới gọi được)
 async function addUser(name, email, password, role) {
     try {
-        // Tạo user bằng Firebase Auth
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const uid = userCredential.user.uid;
-
-        // Lưu thông tin vào Firestore
         await db.collection('users').doc(uid).set({
             name: name,
             email: email,
             role: role
         });
-
         alert('Tạo user thành công!');
-        loadAllUsers(); // Cập nhật danh sách
+        loadAllUsers();
     } catch (error) {
         console.error('Lỗi tạo user:', error);
         alert('Lỗi: ' + error.message);
     }
 }
 
-// Thiết lập form thêm user
 function setupAddUser() {
     const form = document.getElementById('addUserForm');
     if (form) {
@@ -198,20 +139,27 @@ function setupAddUser() {
             const email = document.getElementById('newEmail').value.trim();
             const password = document.getElementById('newPassword').value;
             const role = document.getElementById('newRole').value;
-
             if (!email.endsWith('@coreq.com')) {
                 alert('Email phải có đuôi @coreq.com');
                 return;
             }
-
             addUser(name, email, password, role);
         });
     }
 }
 
-// ========== CÁC HÀM CHO TRANG USER ==========
+// ========== ĐĂNG XUẤT ==========
+function setupLogout() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            await auth.signOut();
+            window.location.href = 'index.html';
+        });
+    }
+}
 
-// Lấy tên người dùng hiện tại
+// ========== LẤY TÊN USER HIỆN TẠI ==========
 async function loadCurrentUserName() {
     const user = auth.currentUser;
     if (user) {
@@ -227,18 +175,19 @@ async function loadCurrentUserName() {
     }
 }
 
-// ========== XỬ LÝ TRẠNG THÁI ĐĂNG NHẬP CHUNG ==========
+// ========== THEO DÕI TRẠNG THÁI ĐĂNG NHẬP ==========
 auth.onAuthStateChanged(user => {
     if (user) {
         console.log('Đã đăng nhập:', user.email);
-        // Nếu đang ở trang login, chuyển theo role
-        if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
+        const path = window.location.pathname;
+        // Nếu đang ở trang login, chuyển hướng theo role
+        if (path.endsWith('index.html') || path === '/') {
             redirectUserByRole(user.uid);
         }
     } else {
         console.log('Chưa đăng nhập');
-        // Nếu đang ở trang admin/user, chuyển về login
-        if (window.location.pathname.endsWith('admin.html') || window.location.pathname.endsWith('user.html')) {
+        const path = window.location.pathname;
+        if (path.endsWith('admin.html') || path.endsWith('user.html')) {
             window.location.href = 'index.html';
         }
     }
