@@ -21,29 +21,34 @@ async function getUserRole(uid) {
     try {
         const doc = await db.collection('users').doc(uid).get();
         if (doc.exists) {
-            return doc.data().role;
+            const role = doc.data().role;
+            console.log('✅ Role lấy được:', role);
+            return role;
         }
-        throw new Error('Tài khoản chưa được phân quyền trong Firestore');
+        console.warn('⚠️ Document không tồn tại trong Firestore');
+        return null;
     } catch (error) {
-        console.error('Lỗi lấy role:', error);
+        console.error('❌ Lỗi khi đọc Firestore:', error);
         return null;
     }
 }
 
-// ========== CHUYỂN HƯỚNG THEO ROLE (chỉ dùng từ trang login) ==========
+// ========== CHUYỂN HƯỚNG THEO ROLE (dùng từ form login) ==========
 async function redirectUserByRole(uid) {
     if (redirecting) return;
     redirecting = true;
     try {
         const role = await getUserRole(uid);
         if (role === 'admin') {
+            console.log('➡️ Chuyển đến admin.html');
             window.location.href = 'admin.html';
         } else if (role === 'user') {
+            console.log('➡️ Chuyển đến user.html');
             window.location.href = 'user.html';
         } else {
-            await auth.signOut();
+            // Không signOut, chỉ hiển thị thông báo
             alert('Tài khoản chưa được phân quyền. Vui lòng liên hệ admin.');
-            window.location.href = 'index.html';
+            // Giữ nguyên ở trang login
         }
     } finally {
         redirecting = false;
@@ -175,17 +180,13 @@ async function loadCurrentUserName() {
     }
 }
 
-// ========== THEO DÕI TRẠNG THÁI ĐĂNG NHẬP ==========
+// ========== THEO DÕI TRẠNG THÁI (không tự chuyển hướng) ==========
 auth.onAuthStateChanged(user => {
     if (user) {
-        console.log('Đã đăng nhập:', user.email);
-        const path = window.location.pathname;
-        // Nếu đang ở trang login, chuyển hướng theo role
-        if (path.endsWith('index.html') || path === '/') {
-            redirectUserByRole(user.uid);
-        }
+        console.log('✅ Đã đăng nhập:', user.email);
     } else {
-        console.log('Chưa đăng nhập');
+        console.log('ℹ️ Chưa đăng nhập hoặc đã đăng xuất');
+        // Tự chuyển về login nếu đang ở trang admin/user
         const path = window.location.pathname;
         if (path.endsWith('admin.html') || path.endsWith('user.html')) {
             window.location.href = 'index.html';
