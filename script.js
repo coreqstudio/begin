@@ -254,6 +254,10 @@ function setupTabs() {
             if (item.getAttribute('data-tab') === 'users') {
                 loadAllUsers();
             }
+          // load coinlog
+          if (item.getAttribute('data-tab') === 'coin-logs') {
+                loadCoinLogs();
+            }
         });
     });
 }
@@ -557,3 +561,33 @@ async function sendNotification(toUserId, message) {
         console.error('❌ Lỗi gửi thông báo:', error);
     }
 }
+//----hàm tải log coin-----
+async function loadCoinLogs() {
+    const logListEl = document.getElementById('coinLogList');
+    if (!logListEl) return;
+    try {
+        const snapshot = await db.collection('coin_logs')
+            .orderBy('timestamp', 'desc')
+            .limit(100)
+            .get();
+        logListEl.innerHTML = '';
+        if (snapshot.empty) {
+            logListEl.innerHTML = '<p>Chưa có log nào.</p>';
+            return;
+        }
+        snapshot.forEach(doc => {
+            const log = doc.data();
+            const div = document.createElement('div');
+            div.className = 'log-item';
+            const time = log.timestamp ? log.timestamp.toDate().toLocaleString('vi-VN') : 'Chưa rõ';
+            // Tạo màu sắc: + xanh, - đỏ
+            const color = log.type === 'add' ? 'green' : 'red';
+            div.innerHTML = `<span style="color:${color};">${log.message}</span> (${time})`;
+            logListEl.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Lỗi tải log coin:', error);
+        logListEl.innerHTML = '<p style="color:red">Lỗi tải log.</p>';
+    }
+}
+
