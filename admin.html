@@ -63,28 +63,38 @@
                         </div>
                     </div>
 
-                    <!-- Tab Phần Thưởng -->
-                    <div id="tab-rewards" class="tab-panel">
-                        <h3>Quản lý phần thưởng</h3>
-                        <div class="reward-section">
-                            <h4>Danh sách user</h4>
-                            <div id="rewardUserList" class="user-list">
-                                <!-- Danh sách user để chọn tặng coin -->
-                            </div>
-                            <div class="reward-form">
-                                <select id="rewardUserSelect">
-                                    <option value="">-- Chọn user --</option>
-                                </select>
-                                <input type="number" id="coinAmount" placeholder="Số coins" min="1">
-                                <button id="sendRewardBtn" class="btn-primary">Tặng</button>
-                            </div>
-                            <h4>Lịch sử tặng</h4>
-                            <div id="rewardHistory" class="reward-history">
-                                <!-- Lịch sử tặng sẽ load từ Firestore -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                   <!-- Tab Phần Thưởng -->
+<div id="tab-rewards" class="tab-panel">
+    <h3>Quản lý phần thưởng</h3>
+    <!-- Phần tặng coin -->
+    <div class="reward-section">
+        <h4>Danh sách user</h4>
+        <div id="rewardUserList" class="user-list"></div>
+        <div class="reward-form">
+            <select id="rewardUserSelect">
+                <option value="">-- Chọn user --</option>
+            </select>
+            <input type="number" id="coinAmount" placeholder="Số coins" min="1">
+            <button id="sendRewardBtn" class="btn-primary">Tặng</button>
+        </div>
+    </div>
+
+    <!-- Phần trừ coin -->
+    <div class="reward-section" style="margin-top:20px;">
+        <h4>Trừ Coin do vi phạm</h4>
+        <div class="reward-form">
+            <select id="penaltyUserSelect">
+                <option value="">-- Chọn user --</option>
+            </select>
+            <input type="number" id="penaltyCoinAmount" placeholder="Số coins" min="1">
+            <input type="text" id="penaltyNote" placeholder="Lý do vi phạm" style="width:300px;">
+            <button id="subtractCoinBtn" class="btn-primary" style="background:red;">Trừ</button>
+        </div>
+    </div>
+
+    <h4>Lịch sử tặng/trừ</h4>
+    <div id="rewardHistory" class="reward-history"></div>
+</div>
 
                 <!-- Thông báo không có quyền -->
                 <div id="noAccess" style="display: none;">
