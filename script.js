@@ -364,26 +364,27 @@ async function sendReward() {
     }
 
     try {
-        // Kiểm tra người tặng có đủ quyền (admin)
+        // Kiểm tra admin (đã có role)
         const adminDoc = await db.collection('users').doc(user.uid).get();
         if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
             alert('Bạn không có quyền tặng coins.');
             return;
         }
 
+        // Lấy email của người nhận
+        const toUserDoc = await db.collection('users').doc(toUserId).get();
+        const toEmail = toUserDoc.exists ? toUserDoc.data().email : 'unknown';
+
         // Cập nhật coins cho người nhận
         await db.collection('users').doc(toUserId).update({
             coins: firebase.firestore.FieldValue.increment(amount)
         });
 
-        // Ghi lịch sử tặng
-        await db.collection('rewards').add({
-            fromUserId: user.uid,
-            fromEmail: user.email,
-            toUserId: toUserId,
-            amount: amount,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // Ghi log coin
+        await logCoinAction('add', user.email, toUserId, toEmail, amount);
+
+        // Gửi thông báo cho user nhận coin
+        await sendNotification(toUserId, `Bạn nhận được +${amount} coins từ ${user.email}`);
 
         alert('Tặng coins thành công!');
         amountEl.value = '';
@@ -453,5 +454,99 @@ async function loadAdminPage() {
     } else {
         adminContent.style.display = 'none';
         noAccess.style.display = 'block';
+    }
+}
+
+// ========== GHI LOG COIN ==========
+async function logCoinAction(type, fromEmail, toUserId, toEmail, amount, note = '') {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+        // Lấy thời gian để hiển thị
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('vi-VN');
+        const dateString = now.toLocaleDateString('vi-VN');
+        const message = `${fromEmail} đã ${type === 'add' ? '+' : '-'}${amount} coin cho ${toEmail}${note ? ' - Ghi chú: ' + note : ''} lúc ${timeString} ngày ${dateString}`;
+        
+        await db.collection('coin_logs').add({
+            type: type, // 'add' hoặc 'subtract'
+            fromUserId: user.uid,
+            fromEmail: fromEmail,
+            toUserId: toUserId,
+            toEmail: toEmail,
+            amount: amount,
+            note: note,
+            message: message,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        console.log('📝 Đã ghi log coin:', message);
+    } catch (error) {
+        console.error('❌ Lỗi ghi log coin:', error);
+    }
+}
+
+// ========== TRỪ COIN (PHẠT) ==========
+async function subtractCoin() {
+    const selectEl = document.getElementById('penaltyUserSelect');
+    const amountEl = document.getElementById('penaltyCoinAmount');
+    const noteEl = document.getElementById('penaltyNote');
+    const user = auth.currentUser;
+    if (!user || !selectEl || !amountEl || !noteEl) return;
+
+    const toUserId = selectEl.value;
+    const amount = Number(amountEl.value);
+    const note = noteEl.value.trim();
+    if (!toUserId || !amount || amount <= 0) {
+        alert('Vui lòng chọn user và nhập số coins hợp lệ.');
+        return;
+    }
+
+    try {
+        // Kiểm tra admin
+        const adminDoc = await db.collection('users').doc(user.uid).get();
+        if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+            alert('Bạn không có quyền trừ coins.');
+            return;
+        }
+
+        // Lấy email người nhận
+        const toUserDoc = await db.collection('users').doc(toUserId).get();
+        const toEmail = toUserDoc.exists ? toUserDoc.data().email : 'unknown';
+
+        // Trừ coins
+        await db.collection('users').doc(toUserId).update({
+            coins: firebase.firestore.FieldValue.increment(-amount)
+        });
+
+        // Ghi log coin
+        await logCoinAction('subtract', user.email, toUserId, toEmail, amount, note);
+
+        // Gửi thông báo cho user bị trừ
+        await sendNotification(toUserId, `Bạn bị trừ ${amount} coins với lý do: ${note || 'không rõ'}`);
+
+        alert('Trừ coins thành công!');
+        amountEl.value = '';
+        noteEl.value = '';
+        loadPenaltyUsers();
+        loadRewardHistory(); // nếu muốn cập nhật lịch sử
+    } catch (error) {
+        console.error('Lỗi trừ coins:', error);
+        alert('Lỗi: ' + error.message);
+    }
+}
+
+// ========== GỬI THÔNG BÁO ==========
+async function sendNotification(toUserId, message) {
+    try {
+        await db.collection('notifications').add({
+            userId: toUserId,
+            message: message,
+            read: false,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        console.log('🔔 Đã gửi thông báo:', message);
+    } catch (error) {
+        console.error('❌ Lỗi gửi thông báo:', error);
     }
 }
