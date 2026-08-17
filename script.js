@@ -320,22 +320,29 @@ async function loadLogs() {
 
 // ========== PHẦN THƯỞNG (COINS) ==========
 async function loadRewardUsers() {
-    const selectEl = document.getElementById('rewardUserSelect');
+    const selects = ['rewardUserSelect', 'penaltyUserSelect'];
     const listEl = document.getElementById('rewardUserList');
-    if (!selectEl || !listEl) return;
+    if (!listEl) return;
     try {
         const snapshot = await db.collection('users').get();
-        selectEl.innerHTML = '<option value="">-- Chọn user --</option>';
+        // Reset tất cả select
+        selects.forEach(id => {
+            const sel = document.getElementById(id);
+            if (sel) sel.innerHTML = '<option value="">-- Chọn user --</option>';
+        });
         listEl.innerHTML = '';
         snapshot.forEach(doc => {
             const user = doc.data();
-            // Không hiển thị admin trong danh sách tặng? Có thể tuỳ chỉnh
             if (user.role === 'admin') return; // bỏ qua admin
-            const option = document.createElement('option');
-            option.value = doc.id;
-            option.textContent = `${user.name || 'Không tên'} (${user.email || ''})`;
-            selectEl.appendChild(option);
-
+            selects.forEach(id => {
+                const sel = document.getElementById(id);
+                if (sel) {
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${user.name || 'Không tên'} (${user.email || ''})`;
+                    sel.appendChild(option);
+                }
+            });
             const card = document.createElement('div');
             card.className = 'user-card';
             card.innerHTML = `
@@ -426,9 +433,9 @@ async function loadRewardHistory() {
 
 function setupReward() {
     const sendBtn = document.getElementById('sendRewardBtn');
-    if (sendBtn) {
-        sendBtn.addEventListener('click', sendReward);
-    }
+    if (sendBtn) sendBtn.addEventListener('click', sendReward);
+    const subtractBtn = document.getElementById('subtractCoinBtn');
+    if (subtractBtn) subtractBtn.addEventListener('click', subtractCoin);
 }
 
 // ========== SỬA ĐỔI loadAdminPage ==========
