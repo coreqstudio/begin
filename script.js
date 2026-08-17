@@ -213,3 +213,232 @@ auth.onAuthStateChanged(user => {
         }
     }
 });
+
+// ========== QUẢN LÝ TAB ==========
+function setupTabs() {
+    const menuItems = document.querySelectorAll('.menu li');
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // Remove active from all
+            menuItems.forEach(i => i.classList.remove('active'));
+            // Hide all tab panels
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            // Add active to clicked menu
+            item.classList.add('active');
+            // Show corresponding tab panel
+            const tabId = 'tab-' + item.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+
+            // Nếu chuyển tab logs, load logs
+            if (item.getAttribute('data-tab') === 'logs') {
+                loadLogs();
+            }
+            // Nếu chuyển tab rewards, load rewards
+            if (item.getAttribute('data-tab') === 'rewards') {
+                loadRewardUsers();
+                loadRewardHistory();
+            }
+            // Nếu chuyển tab users, load users
+            if (item.getAttribute('data-tab') === 'users') {
+                loadAllUsers();
+            }
+        });
+    });
+}
+
+// ========== HIỂN THỊ TÊN ADMIN ==========
+async function loadAdminInfo() {
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            const doc = await db.collection('users').doc(user.uid).get();
+            if (doc.exists) {
+                const name = doc.data().name || 'Admin';
+                document.getElementById('adminName').textContent = name;
+            }
+        } catch (error) {
+            console.error('Lỗi lấy tên admin:', error);
+        }
+    }
+}
+
+// ========== LOGS ==========
+async function logUserAction(action) {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+        await db.collection('logs').add({
+            userId: user.uid,
+            email: user.email,
+            action: action,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.error('Lỗi ghi log:', error);
+    }
+}
+
+async function loadLogs() {
+    const logListEl = document.getElementById('logList');
+    if (!logListEl) return;
+    try {
+        const snapshot = await db.collection('logs')
+            .orderBy('timestamp', 'desc')
+            .limit(50)
+            .get();
+        logListEl.innerHTML = '';
+        if (snapshot.empty) {
+            logListEl.innerHTML = '<p>Chưa có log nào.</p>';
+            return;
+        }
+        snapshot.forEach(doc => {
+            const log = doc.data();
+            const div = document.createElement('div');
+            div.className = 'log-item';
+            const time = log.timestamp ? log.timestamp.toDate().toLocaleString('vi-VN') : 'Chưa rõ';
+            div.innerHTML = `<strong>${log.email}</strong> - ${log.action} - <em>${time}</em>`;
+            logListEl.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Lỗi tải logs:', error);
+        logListEl.innerHTML = '<p style="color:red">Lỗi tải logs.</p>';
+    }
+}
+
+// ========== PHẦN THƯỞNG (COINS) ==========
+async function loadRewardUsers() {
+    const selectEl = document.getElementById('rewardUserSelect');
+    const listEl = document.getElementById('rewardUserList');
+    if (!selectEl || !listEl) return;
+    try {
+        const snapshot = await db.collection('users').get();
+        selectEl.innerHTML = '<option value="">-- Chọn user --</option>';
+        listEl.innerHTML = '';
+        snapshot.forEach(doc => {
+            const user = doc.data();
+            // Không hiển thị admin trong danh sách tặng? Có thể tuỳ chỉnh
+            if (user.role === 'admin') return; // bỏ qua admin
+            const option = document.createElement('option');
+            option.value = doc.id;
+            option.textContent = `${user.name || 'Không tên'} (${user.email || ''})`;
+            selectEl.appendChild(option);
+
+            const card = document.createElement('div');
+            card.className = 'user-card';
+            card.innerHTML = `
+                <h4>${user.name || 'Không tên'}</h4>
+                <p>Email: ${user.email || ''}</p>
+                <p>Coins: ${user.coins || 0}</p>
+            `;
+            listEl.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Lỗi tải danh sách user:', error);
+    }
+}
+
+async function sendReward() {
+    const selectEl = document.getElementById('rewardUserSelect');
+    const amountEl = document.getElementById('coinAmount');
+    const user = auth.currentUser;
+    if (!user || !selectEl || !amountEl) return;
+
+    const toUserId = selectEl.value;
+    const amount = Number(amountEl.value);
+    if (!toUserId || !amount || amount <= 0) {
+        alert('Vui lòng chọn user và nhập số coins hợp lệ.');
+        return;
+    }
+
+    try {
+        // Kiểm tra người tặng có đủ quyền (admin)
+        const adminDoc = await db.collection('users').doc(user.uid).get();
+        if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
+            alert('Bạn không có quyền tặng coins.');
+            return;
+        }
+
+        // Cập nhật coins cho người nhận
+        await db.collection('users').doc(toUserId).update({
+            coins: firebase.firestore.FieldValue.increment(amount)
+        });
+
+        // Ghi lịch sử tặng
+        await db.collection('rewards').add({
+            fromUserId: user.uid,
+            fromEmail: user.email,
+            toUserId: toUserId,
+            amount: amount,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert('Tặng coins thành công!');
+        amountEl.value = '';
+        // Cập nhật lại danh sách và lịch sử
+        loadRewardUsers();
+        loadRewardHistory();
+    } catch (error) {
+        console.error('Lỗi tặng coins:', error);
+        alert('Lỗi: ' + error.message);
+    }
+}
+
+async function loadRewardHistory() {
+    const historyEl = document.getElementById('rewardHistory');
+    if (!historyEl) return;
+    try {
+        const snapshot = await db.collection('rewards')
+            .orderBy('timestamp', 'desc')
+            .limit(50)
+            .get();
+        historyEl.innerHTML = '';
+        if (snapshot.empty) {
+            historyEl.innerHTML = '<p>Chưa có lịch sử tặng.</p>';
+            return;
+        }
+        snapshot.forEach(doc => {
+            const reward = doc.data();
+            const div = document.createElement('div');
+            div.className = 'reward-item';
+            const time = reward.timestamp ? reward.timestamp.toDate().toLocaleString('vi-VN') : 'Chưa rõ';
+            div.innerHTML = `<strong>${reward.fromEmail}</strong> → <strong>${reward.toUserId}</strong> : ${reward.amount} coins (${time})`;
+            historyEl.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Lỗi tải lịch sử tặng:', error);
+        historyEl.innerHTML = '<p style="color:red">Lỗi tải lịch sử.</p>';
+    }
+}
+
+function setupReward() {
+    const sendBtn = document.getElementById('sendRewardBtn');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendReward);
+    }
+}
+
+// ========== SỬA ĐỔI loadAdminPage ==========
+async function loadAdminPage() {
+    const user = auth.currentUser;
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    const role = await getUserRole(user.uid);
+    const adminContent = document.getElementById('adminContent');
+    const noAccess = document.getElementById('noAccess');
+    if (role === 'admin') {
+        adminContent.style.display = 'block';
+        noAccess.style.display = 'none';
+        // Gọi các hàm khởi tạo dữ liệu cho admin
+        loadAdminInfo();
+        loadAllUsers();
+        loadRewardUsers();
+        loadRewardHistory();
+        // Ghi log truy cập
+        logUserAction('login');
+    } else {
+        adminContent.style.display = 'none';
+        noAccess.style.display = 'block';
+    }
+}
