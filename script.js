@@ -590,4 +590,47 @@ async function loadCoinLogs() {
         logListEl.innerHTML = '<p style="color:red">Lỗi tải log.</p>';
     }
 }
+// ========== THÔNG BÁO ==========
+async function loadNotifications() {
+    const user = auth.currentUser;
+    if (!user) return;
+    const notifListEl = document.getElementById('notificationList');
+    if (!notifListEl) return;
+    try {
+        const snapshot = await db.collection('notifications')
+            .where('userId', '==', user.uid)
+            .orderBy('timestamp', 'desc')
+            .limit(20)
+            .get();
+        notifListEl.innerHTML = '';
+        snapshot.forEach(doc => {
+            const notif = doc.data();
+            const div = document.createElement('div');
+            div.style.padding = '8px';
+            div.style.borderBottom = '1px solid #eee';
+            div.textContent = notif.message;
+            notifListEl.appendChild(div);
+        });
+        if (snapshot.empty) {
+            notifListEl.innerHTML = '<div style="padding:8px;">Không có thông báo.</div>';
+        }
+    } catch (error) {
+        console.error('Lỗi tải thông báo:', error);
+        notifListEl.innerHTML = '<div style="padding:8px; color:red;">Lỗi tải thông báo.</div>';
+    }
+}
 
+function setupNotificationBell() {
+    const bell = document.getElementById('notificationBell');
+    const dropdown = document.getElementById('notificationDropdown');
+    if (bell && dropdown) {
+        bell.addEventListener('click', () => {
+            if (dropdown.style.display === 'none') {
+                dropdown.style.display = 'block';
+                loadNotifications();
+            } else {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+}
