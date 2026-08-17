@@ -55,7 +55,7 @@
 
             try {
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                messageEl.textContent = 'test ok';
+                messageEl.textContent = 'Đăng Nhập Thành Công';
                 messageEl.style.color = 'green';
                 // Việc chuyển hướng sẽ do onAuthStateChanged trong script.js đảm nhiệm
                 await redirectUserByRole(userCredential.user.uid);
