@@ -13,31 +13,84 @@
             <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
         </nav>
 
-        <!-- Nội dung chỉ hiển thị cho admin -->
-        <div id="adminContent">
-            <main>
-                <h3>Danh sách nhân viên</h3>
-                <div id="userList" class="user-list">
-                    <!-- Danh sách user sẽ load từ Firestore -->
+        <div class="admin-body">
+            <!-- Sidebar bên trái (1/4) -->
+            <aside class="sidebar">
+                <div class="admin-info">
+                    <img src="https://via.placeholder.com/50" alt="Avatar" class="avatar">
+                    <span id="adminName">Admin</span>
                 </div>
-                <hr>
-                <h3>Thêm nhân viên mới</h3>
-                <form id="addUserForm">
-                    <input type="text" id="newName" placeholder="Tên nhân viên" required>
-                    <input type="email" id="newEmail" placeholder="Email (vd: user@coreq.com)" required>
-                    <input type="password" id="newPassword" placeholder="Mật khẩu tạm" required>
-                    <select id="newRole">
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                    <button type="submit" class="btn-primary">Tạo user</button>
-                </form>
-            </main>
-        </div>
+                <ul class="menu">
+                    <li data-tab="users" class="active">👥 Danh Sách Users</li>
+                    <li data-tab="create-user">➕ Tạo Account</li>
+                    <li data-tab="logs">📋 Logs</li>
+                    <li data-tab="rewards">🎁 Phần Thưởng</li>
+                </ul>
+            </aside>
 
-        <!-- Thông báo không có quyền -->
-        <div id="noAccess" style="display: none;">
-            <p>Bạn không có quyền truy cập trang admin.</p>
+            <!-- Nội dung bên phải (3/4) -->
+            <main class="content">
+                <!-- Khu vực admin thực sự -->
+                <div id="adminContent">
+                    <!-- Tab Danh Sách Users -->
+                    <div id="tab-users" class="tab-panel active">
+                        <h3>Danh sách nhân viên</h3>
+                        <div id="userList" class="user-list">
+                            <!-- Danh sách user sẽ load từ Firestore -->
+                        </div>
+                    </div>
+
+                    <!-- Tab Tạo Account -->
+                    <div id="tab-create-user" class="tab-panel">
+                        <h3>Thêm nhân viên mới</h3>
+                        <form id="addUserForm">
+                            <input type="text" id="newName" placeholder="Tên nhân viên" required>
+                            <input type="email" id="newEmail" placeholder="Email (vd: user@coreq.com)" required>
+                            <input type="password" id="newPassword" placeholder="Mật khẩu tạm" required>
+                            <select id="newRole">
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <button type="submit" class="btn-primary">Tạo user</button>
+                        </form>
+                    </div>
+
+                    <!-- Tab Logs -->
+                    <div id="tab-logs" class="tab-panel">
+                        <h3>Lịch sử truy cập</h3>
+                        <div id="logList" class="log-list">
+                            <!-- Logs sẽ load từ Firestore -->
+                        </div>
+                    </div>
+
+                    <!-- Tab Phần Thưởng -->
+                    <div id="tab-rewards" class="tab-panel">
+                        <h3>Quản lý phần thưởng</h3>
+                        <div class="reward-section">
+                            <h4>Danh sách user</h4>
+                            <div id="rewardUserList" class="user-list">
+                                <!-- Danh sách user để chọn tặng coin -->
+                            </div>
+                            <div class="reward-form">
+                                <select id="rewardUserSelect">
+                                    <option value="">-- Chọn user --</option>
+                                </select>
+                                <input type="number" id="coinAmount" placeholder="Số coins" min="1">
+                                <button id="sendRewardBtn" class="btn-primary">Tặng</button>
+                            </div>
+                            <h4>Lịch sử tặng</h4>
+                            <div id="rewardHistory" class="reward-history">
+                                <!-- Lịch sử tặng sẽ load từ Firestore -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông báo không có quyền -->
+                <div id="noAccess" style="display: none;">
+                    <p>Bạn không có quyền truy cập trang admin.</p>
+                </div>
+            </main>
         </div>
     </div>
 
@@ -48,9 +101,11 @@
 
     <script src="script.js"></script>
     <script>
-        // Không gọi loadAdminPage() ở đây, sẽ được xử lý trong onAuthStateChanged
+        // Các hàm khởi tạo được gọi trong onAuthStateChanged (script.js)
         setupLogout();
+        setupTabs();
         setupAddUser();
+        setupReward();
     </script>
 </body>
 </html>
