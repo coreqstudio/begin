@@ -15,6 +15,8 @@ const db = firebase.firestore();
 
 // Biến chống lặp redirect
 let redirecting = false;
+// Biến toàn cục update logs all users
+let hasLogged = false;
 
 // ========== HÀM LẤY ROLE TỪ FIRESTORE ==========
 async function getUserRole(uid) {
@@ -194,6 +196,13 @@ auth.onAuthStateChanged(user => {
     const path = window.location.pathname;
 
     if (user) {
+      //log update
+
+      if (!hasLogged) {
+            hasLogged = true;
+            // Ghi log truy cập cho tất cả users
+            logUserAction('login');
+        }
         // Nếu đang ở trang login, chuyển hướng theo role
         if (path.endsWith('index.html') || path === '/') {
             redirectUserByRole(user.uid);
@@ -207,6 +216,8 @@ auth.onAuthStateChanged(user => {
             loadUserPage();
         }
     } else {
+      // Khi user logout, đặt lại hasLogged để lần đăng nhập sau ghi log lại
+        hasLogged = false;
         // Nếu chưa đăng nhập mà đang ở trang admin/user, chuyển về login
         if (path.endsWith('admin.html') || path.endsWith('user.html')) {
             window.location.href = 'index.html';
@@ -273,6 +284,7 @@ async function logUserAction(action) {
             action: action,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
+      console.log('📝 Đã ghi log:', action);
     } catch (error) {
         console.error('Lỗi ghi log:', error);
     }
@@ -436,7 +448,7 @@ async function loadAdminPage() {
         loadRewardUsers();
         loadRewardHistory();
         // Ghi log truy cập
-        logUserAction('login');
+      //--  logUserAction('login');
     } else {
         adminContent.style.display = 'none';
         noAccess.style.display = 'block';
