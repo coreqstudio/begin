@@ -121,9 +121,9 @@ body {
     min-height: 20px;
 }
 
-/* ---------- Trang admin & user ---------- */
-.admin-container, .user-container {
-    max-width: 1200px;
+/* ---------- Admin Layout ---------- */
+.admin-container {
+    max-width: 1400px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -132,88 +132,147 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     padding: 10px 20px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-nav h2 {
-    color: #1a73e8;
+.admin-body {
+    display: flex;
+    gap: 20px;
+    min-height: calc(100vh - 120px);
 }
 
-.btn-logout {
-    padding: 8px 16px;
-    background: #f0f2f5;
-    border: none;
+.sidebar {
+    width: 25%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    padding: 20px;
+}
+
+.admin-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.avatar {
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+}
+
+.menu {
+    list-style: none;
+    padding: 0;
+}
+
+.menu li {
+    padding: 12px 10px;
+    margin-bottom: 8px;
     border-radius: 6px;
     cursor: pointer;
+    transition: background 0.2s;
+    font-weight: 500;
 }
 
-.btn-logout:hover {
-    background: #e0e0e0;
+.menu li:hover {
+    background: #f0f7ff;
+}
+
+.menu li.active {
+    background: #1a73e8;
+    color: white;
+}
+
+.content {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    padding: 20px;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
 }
 
 .user-list {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin: 20px 0;
+    margin: 15px 0;
 }
 
 .user-card {
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    width: 200px;
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    width: 180px;
 }
 
-.user-card h4 {
-    margin-bottom: 5px;
-    color: #333;
+.log-list {
+    margin-top: 15px;
 }
 
-.user-card p {
-    font-size: 13px;
-    color: #666;
+.log-item {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 14px;
 }
 
-form {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+.reward-section {
+    margin-top: 10px;
 }
 
-form input, form select {
-    margin: 5px;
+.reward-form {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+    align-items: center;
+}
+
+.reward-form select,
+.reward-form input {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     width: 200px;
 }
 
-.btn-primary {
-    background: #1a73e8;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
+.reward-history {
+    margin-top: 15px;
+}
+
+.reward-item {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 14px;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .login-container {
+    .admin-body {
         flex-direction: column;
     }
-    .left-panel {
-        flex: 1;
-        min-height: 200px;
+    .sidebar {
+        width: 100%;
     }
-    .right-panel {
-        flex: 1;
+    .content {
+        width: 100%;
     }
 }
