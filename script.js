@@ -168,6 +168,7 @@ function setupLogout() {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
+            await logUserAction('logout');
             await auth.signOut();
             window.location.href = 'index.html';
         });
