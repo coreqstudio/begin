@@ -17,7 +17,6 @@ const db = firebase.firestore();
 let redirecting = false;
 // Biến toàn cục update logs all users
 let hasLogged = false;
-
 // ========== HÀM LẤY ROLE TỪ FIRESTORE ==========
 async function getUserRole(uid) {
     try {
