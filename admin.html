@@ -10,8 +10,16 @@
     <div class="admin-container">
         <nav>
             <h2>Admin Dashboard</h2>
-            <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
+            <div style="display:flex; align-items:center;">
+        <span id="notificationBell" style="font-size:24px; cursor:pointer; margin-right:20px;">🔔</span>
+        <button id="logoutBtn" class="btn-logout">Đăng xuất</button>
+    </div>
         </nav>
+     <!-- Dropdown Thông Báo  -->
+        <div id="notificationDropdown" style="display:none; position:absolute; top:60px; right:20px; width:300px; background:white; border:1px solid #ccc; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1); z-index:1000;">
+    <div style="padding:10px; font-weight:bold;">Thông báo</div>
+    <div id="notificationList" style="max-height:300px; overflow-y:auto;"></div>
+</div>
 
         <div class="admin-body">
             <!-- Sidebar bên trái (1/4) -->
